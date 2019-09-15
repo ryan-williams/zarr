@@ -420,6 +420,12 @@ class TestCopy(unittest.TestCase):
         foo.attrs['array'] = np.arange(10)
         baz = foo.create_dataset('bar/baz', data=np.arange(100), chunks=(50,))
         baz.attrs['units'] = 'metres'
+
+        strs = [ str(i) for i in range(100) ]
+        dtype = h5py.string_dtype(encoding='utf-8')
+        zxcv = foo.create_dataset('zxcv', shape=(100,), chunks=(100,), dtype=dtype)
+        zxcv[:] = strs
+
         if self.source_h5py:
             extra_kws = dict(compression='gzip', compression_opts=3, fillvalue=84,
                              shuffle=True, fletcher32=True)
@@ -623,7 +629,7 @@ class TestCopy(unittest.TestCase):
         n_copied, n_skipped, n_bytes_copied = \
             copy(source['foo'], dest, dry_run=True, return_stats=True)
         assert 0 == len(dest)
-        assert 3 == n_copied
+        assert 4 == n_copied
         assert 0 == n_skipped
         assert 0 == n_bytes_copied
 
@@ -643,7 +649,7 @@ class TestCopy(unittest.TestCase):
             copy(source['foo'], dest, dry_run=True, if_exists='skip',
                  return_stats=True)
         assert 1 == len(dest)
-        assert 2 == n_copied
+        assert 3 == n_copied
         assert 1 == n_skipped
         assert 0 == n_bytes_copied
         assert_array_equal(baz, dest['foo/bar/baz'])
@@ -653,7 +659,7 @@ class TestCopy(unittest.TestCase):
             copy(source['foo'], dest, dry_run=True, if_exists='replace',
                  return_stats=True)
         assert 1 == len(dest)
-        assert 3 == n_copied
+        assert 4 == n_copied
         assert 0 == n_skipped
         assert 0 == n_bytes_copied
         assert_array_equal(baz, dest['foo/bar/baz'])
