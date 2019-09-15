@@ -33,11 +33,20 @@ def ensure_text_type(s):
     return s
 
 
+def coerce_to_json_serializable(o):
+    if type(o) is np.ndarray:
+        return o.tolist()
+    if type(o) is type:
+        return o.__name__
+    return o
+
+
 def json_dumps(o):
     """Write JSON in a consistent, human-readable way."""
     try:
         return json.dumps(o, indent=4, sort_keys=True, ensure_ascii=True,
-                          separators=(',', ': ')).encode('ascii')
+                          separators=(',', ': '),
+                          default=coerce_to_json_serializable).encode('ascii')
     except TypeError:
         raise TypeError('Failed to serialize %s' % o)
 
