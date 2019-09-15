@@ -330,8 +330,9 @@ def check_copied_array(original, copied, without_attrs=False,
         expect_props.setdefault('fillvalue', original.fill_value)
 
     # compare properties
-    for k, v in expect_props.items():
-        assert v == getattr(copied, k)
+    for k, expected in expect_props.items():
+        actual = getattr(copied, k)
+        assert expected == actual, '%s: expected %s, actual %s' % (k, expected, actual)
 
     # compare data
     assert_array_equal(original[:], copied[:])
@@ -342,6 +343,31 @@ def check_copied_array(original, copied, without_attrs=False,
             assert k not in copied.attrs
     else:
         assert sorted(original.attrs.items()) == sorted(copied.attrs.items())
+
+
+def is_iterable(x):
+    try:
+        for _ in x:
+            return True
+    except:
+        return False
+
+
+def eq(a, b):
+    if type(a) is np.ndarray or type(b) is np.ndarray:
+        assert np.array_equal(a, b)
+    elif type(a) is str or type(b) is str:
+        assert type(a) is str and type(b) is str, 'Only one is str: %s, %s' % (a, b)
+    elif hasattr(a, '__iter__') or hasattr(b, '__iter__'):
+        assert hasattr(a, '__iter__') and hasattr(b, '__iter__'), 'Only one is iterable: %s, %s' % (a, b)
+        a = list(a)
+        b = list(b)
+        assert len(a) == len(b), 'Different lengths: %s, %s' % (a, b)
+        print('comparing lists: %s %s' % (a, b))
+        for i in range(len(a)):
+            eq(a[i], b[i])
+    else:
+        assert a == b, '%s != %s' % (a, b)
 
 
 def check_copied_group(original, copied, without_attrs=False, expect_props=None,
@@ -369,9 +395,12 @@ def check_copied_group(original, copied, without_attrs=False, expect_props=None,
     # compare attrs
     if without_attrs:
         for k in original.attrs.keys():
-            assert k not in copied.attrs
+            assert k not in copied.attrs, k
     else:
-        assert sorted(original.attrs.items()) == sorted(copied.attrs.items())
+        eq(
+            sorted(list(original.attrs.items())),
+            sorted(list(copied.attrs.items()))
+        )
 
 
 # noinspection PyAttributeOutsideInit
