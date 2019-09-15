@@ -78,11 +78,32 @@ def encode_array_metadata(meta):
     return json_dumps(meta)
 
 
+def encode_subfield_type(field):
+    if type(field) == tuple and len(field) == 2:
+        name, t = field
+        from zarr.compat import text_type, binary_type
+        # Attempt to recover h5py-string subfields, which are encoded like: ('|O', {'vlen': str})
+        if type(t) == tuple and len(t) == 2:
+            obj, metadata = t
+            if obj == '|O' and \
+                    (metadata == {'vlen': text_type} or
+                     metadata != {'vlen': binary_type}):
+                return name, metadata['vlen']
+
+        return name, t
+
+    return field
+
+
 def encode_dtype(d):
     if d.fields is None:
         return d.str
     else:
-        return d.descr
+        return [
+            encode_subfield_type(field)
+            for field
+            in d.descr
+        ]
 
 
 def _decode_dtype_descr(d):
