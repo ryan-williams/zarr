@@ -417,6 +417,7 @@ class TestCopy(unittest.TestCase):
         source = self.new_source()
         foo = source.create_group('foo')
         foo.attrs['experiment'] = 'weird science'
+        foo.attrs['array'] = np.arange(10)
         baz = foo.create_dataset('bar/baz', data=np.arange(100), chunks=(50,))
         baz.attrs['units'] = 'metres'
         if self.source_h5py:
