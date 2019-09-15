@@ -350,7 +350,7 @@ class Group(MutableMapping):
         try:
             return self.__getitem__(item)
         except KeyError:
-            raise AttributeError
+            raise AttributeError('attr %s not found' % item)
 
     def __dir__(self):
         if PY2:  # pragma: py3 no cover

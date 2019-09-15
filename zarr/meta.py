@@ -97,9 +97,16 @@ def _decode_dtype_descr(d):
     return d
 
 
+class DecodeDtypeException(Exception):
+    pass
+
+
 def decode_dtype(d):
-    d = _decode_dtype_descr(d)
-    return np.dtype(d)
+    try:
+        d = _decode_dtype_descr(d)
+        return np.dtype(d)
+    except KeyError:
+        raise DecodeDtypeException("Failed to decode dtype: %s" % d)
 
 
 def decode_group_metadata(s):

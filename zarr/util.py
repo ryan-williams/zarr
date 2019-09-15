@@ -35,8 +35,11 @@ def ensure_text_type(s):
 
 def json_dumps(o):
     """Write JSON in a consistent, human-readable way."""
-    return json.dumps(o, indent=4, sort_keys=True, ensure_ascii=True,
-                      separators=(',', ': ')).encode('ascii')
+    try:
+        return json.dumps(o, indent=4, sort_keys=True, ensure_ascii=True,
+                          separators=(',', ': ')).encode('ascii')
+    except TypeError:
+        raise TypeError('Failed to serialize %s' % o)
 
 
 def json_loads(s):
