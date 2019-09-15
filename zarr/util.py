@@ -159,6 +159,24 @@ def normalize_chunks(chunks, shape, typesize):
     return tuple(chunks)
 
 
+class InvalidHDF5StringEncoding(Exception):
+    pass
+
+
+def type_codec(key, tokens):
+    codec_id = object_codecs[key]
+    if len(tokens) > 1:
+        args = tokens[1].split(',')
+    else:
+        args = ()
+    try:
+        return codec_registry[codec_id](*args)
+    except KeyError:  # pragma: no cover
+        raise ValueError('codec %r for object type %r is not '
+                         'available; please provide an '
+                         'object_codec manually' % (codec_id, key))
+
+
 def normalize_dtype(dtype, object_codec):
 
     # convenience API for object arrays
@@ -171,18 +189,28 @@ def normalize_dtype(dtype, object_codec):
         if key in object_codecs:
             dtype = np.dtype(object)
             if object_codec is None:
-                codec_id = object_codecs[key]
-                if len(tokens) > 1:
-                    args = tokens[1].split(',')
-                else:
-                    args = ()
-                try:
-                    object_codec = codec_registry[codec_id](*args)
-                except KeyError:  # pragma: no cover
-                    raise ValueError('codec %r for object type %r is not '
-                                     'available; please provide an '
-                                     'object_codec manually' % (codec_id, key))
+                object_codec = type_codec(key, tokens)
             return dtype, object_codec
+    elif dtype:
+        # Check for HDF5 string-types encoded as "object" dtypes (with metadata indicating their
+        # true nature)
+        from h5py import check_string_dtype
+        string_info = check_string_dtype(dtype)
+        if string_info:
+            encoding = string_info.encoding
+            length = string_info.length
+            if encoding == 'ascii':
+                if length:
+                    return np.dtype('S%d' % length), None
+                else:
+                    return dtype, type_codec(binary_type.__name__, [])
+            elif encoding == 'utf-8':
+                if length:
+                    return np.dtype('U%d' % length), None
+                else:
+                    return dtype, type_codec(text_type.__name__, [])
+            else:
+                raise InvalidHDF5StringEncoding(encoding, string_info, dtype)
 
     dtype = np.dtype(dtype)
 
