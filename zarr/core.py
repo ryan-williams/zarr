@@ -154,6 +154,7 @@ class Array(object):
 
             # decode and store metadata as instance members
             meta = decode_array_metadata(meta_bytes)
+            print('decoded metadata: %s' % meta)
             self._meta = meta
             self._shape = meta['shape']
             self._chunks = meta['chunks']
@@ -173,6 +174,12 @@ class Array(object):
             if filters:
                 filters = [get_codec(config) for config in filters]
             self._filters = filters
+
+            # if self._dtype.hasobject and self._fill_value:
+            #     print('dtype %s hasobject; attempt to decode fill_value %s' % (self._dtype, self._fill_value))
+            #     self._fill_value = self._decode_bytes(self._fill_value)
+            #     print('Decoded fill_value: %s' % self._fill_value)
+
 
     def _refresh_metadata(self):
         if not self._cache_metadata:
@@ -1728,8 +1735,8 @@ class Array(object):
     def _chunk_key(self, chunk_coords):
         return self._key_prefix + '.'.join(map(str, chunk_coords))
 
-    def _decode_chunk(self, cdata):
-
+    def _decode_bytes(self, cdata):
+        print('decode bytes: %s; %s %s' % (cdata, self.compressor, self._filters))
         # decompress
         if self._compressor:
             chunk = self._compressor.decode(cdata)
@@ -1740,6 +1747,11 @@ class Array(object):
         if self._filters:
             for f in reversed(self._filters):
                 chunk = f.decode(chunk)
+
+        return chunk
+
+    def _decode_chunk(self, cdata):
+        chunk = self._decode_bytes(cdata)
 
         # view as numpy array with correct dtype
         chunk = ensure_ndarray(chunk)

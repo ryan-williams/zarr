@@ -332,6 +332,9 @@ def check_copied_array(original, copied, without_attrs=False,
     # compare properties
     for k, expected in expect_props.items():
         actual = getattr(copied, k)
+        print('expected: %s, actual: %s, equal? %s, %s %s' % (expected, actual, expected == actual, type(expected), type(actual)))
+        if expected != actual:
+            print(expected[0] == actual[0], expected[1] == actual[1])
         assert expected == actual, '%s: expected %s, actual %s' % (k, expected, actual)
 
     # compare data
@@ -421,10 +424,15 @@ class TestCopy(unittest.TestCase):
         baz = foo.create_dataset('bar/baz', data=np.arange(100), chunks=(50,))
         baz.attrs['units'] = 'metres'
 
-        strs = [ str(i) for i in range(100) ]
-        dtype = h5py.string_dtype(encoding='utf-8')
-        zxcv = foo.create_dataset('zxcv', shape=(100,), chunks=(100,), dtype=dtype)
+        strs = [ str(i) for i in range(900, 1000) ]
+        str_dtype = h5py.string_dtype(encoding='utf-8')
+        zxcv = foo.create_dataset('zxcv', shape=(100,), chunks=(100,), dtype=str_dtype)
         zxcv[:] = strs
+
+        compound_dtype = np.dtype([ ('s', str_dtype), ('n', '<i4') ])
+        data = [ (str(i)*i, i*i) for i in range(10) ]
+        compound = foo.create_dataset('compound', shape=(10,), chunks=(10,), dtype=compound_dtype)
+        compound[:] = data
 
         if self.source_h5py:
             extra_kws = dict(compression='gzip', compression_opts=3, fillvalue=84,

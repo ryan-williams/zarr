@@ -379,16 +379,11 @@ def _init_array_metadata(store, shape, chunks=None, dtype=None, compressor='defa
         filters_config = []
 
     # deal with object encoding
-    if dtype == object:
+    if dtype.hasobject:
         if object_codec is None:
-            if not filters:
-                # there are no filters so we can be sure there is no object codec
-                raise ValueError('missing object_codec for object array')
-            else:
-                # one of the filters may be an object codec, issue a warning rather
-                # than raise an error to maintain backwards-compatibility
-                warnings.warn('missing object_codec for object array; this will raise a '
-                              'ValueError in version 3.0', FutureWarning)
+            # hopefully the compressor (or one of the filters) is an object codec…
+            warnings.warn('missing object_codec for object array; this will raise a '
+                          'ValueError in version 3.0', FutureWarning)
         else:
             filters_config.insert(0, object_codec.get_config())
     elif object_codec is not None:
